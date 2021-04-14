@@ -1,0 +1,3 @@
+CREATE DATABASE "ecommerce";
+CREATE USER ecommerce WITH ENCRYPTED PASSWORD 'password';
+GRANT ALL PRIVILEGES ON DATABASE ecommerce TO ecommerce;
