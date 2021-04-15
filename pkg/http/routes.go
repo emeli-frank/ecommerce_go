@@ -15,6 +15,10 @@ func (h Http) Routes() http.Handler {
 
 	r.Handle("/customers", http.HandlerFunc(h.createCustomer)).Methods("POST")
 
+	r.Handle("/users/{uid:[1-9]+}", http.HandlerFunc(h.updateCustomer)).Methods("PUT")
+
+	r.Handle("/users/authentication", http.HandlerFunc(h.authenticate)).Methods("POST")
+
 	r.Handle("/products", http.HandlerFunc(h.getProducts))
 
 	c := cors.New(cors.Options{

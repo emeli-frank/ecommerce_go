@@ -107,13 +107,61 @@ func NewServer(response *response) *Http {
 
 // #### AUTHENTICATION ####
 func (h Http) authenticate(w http.ResponseWriter, r *http.Request) {
+	const op = "http.authenticate"
 
+	data := &struct {
+		Email string `json:"email"`
+		Password string `json:"password"`
+	}{}
+	if err := decodeJSONBody(w, r, data); err != nil {
+		var mr *malformedRequest
+		if errors.As(err, &mr) {
+			h.Response.clientError(w, mr.status, mr.msg)
+		} else {
+			h.Response.serverError(w, err)
+		}
+		return
+	}
+
+	// check if email and password match
+	match, uid, err := h.UserService.EmailMatchPassword(data.Email, data.Password)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	} else if !match {
+		h.Response.clientError(w, http.StatusUnauthorized, "email and password didn't match")
+		return
+	}
+
+	// get user
+	u, err := h.UserService.User(uid)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	// get auth token
+	authToken, err := u.AuthToken()
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	o := struct {
+		AuthorizationToken string `json:"auth_token,omitempty"`
+		User interface{} `json:"user"`
+	}{
+		AuthorizationToken:         authToken,
+		User:                       u,
+	}
+
+	h.Response.respond(w, http.StatusOK, nil, o)
 }
 
 func (h Http) createCustomer(w http.ResponseWriter, r *http.Request) {
 	data := &struct {
-		Customer  ecommerce.Customer `json:"customer"`
-		Password string 		  `json:"password"`
+		Customer  ecommerce.User `json:"customer"`
+		Password string          `json:"password"`
 	}{}
 	if err := decodeJSONBody(w, r, data); err != nil {
 		var mr *malformedRequest
@@ -134,6 +182,27 @@ func (h Http) createCustomer(w http.ResponseWriter, r *http.Request) {
 	h.Response.respond(w, http.StatusCreated, nil, struct{
 		ID int `json:"id"`
 	}{ID:id})
+}
+
+func (h Http) updateCustomer(w http.ResponseWriter, r *http.Request) {
+	var u ecommerce.User
+	if err := decodeJSONBody(w, r, &u); err != nil {
+		var mr *malformedRequest
+		if errors.As(err, &mr) {
+			h.Response.clientError(w, mr.status, mr.msg)
+		} else {
+			h.Response.serverError(w, err)
+		}
+		return
+	}
+
+	err := h.UserService.UpdateUser(&u)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusCreated, nil, nil)
 }
 
 func (h Http) getProducts(w http.ResponseWriter, r *http.Request) {
