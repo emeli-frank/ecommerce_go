@@ -2,6 +2,7 @@ package main
 
 import (
 	"ecommerce/pkg/ecommerce/product"
+	"ecommerce/pkg/ecommerce/user"
 	http2 "ecommerce/pkg/http"
 	"ecommerce/pkg/storage"
 	"ecommerce/pkg/storage/postgres"
@@ -29,12 +30,16 @@ func main() {
 
 	response := http2.NewResponse(errorLog)
 
-	productRepo := postgres.New(db)
+	productRepo := postgres.NewProductStorage(db)
 	productService := product.New(db, productRepo)
+
+	userRepo := postgres.NewUserStorage(db)
+	userService := user.New(db, userRepo)
 
 	httpEndpoint := &http2.Http{
 		Response: response,
 		ProductService: productService,
+		UserService: userService,
 	}
 	router := httpEndpoint.Routes()
 

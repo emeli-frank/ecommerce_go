@@ -13,6 +13,8 @@ func (h Http) Routes() http.Handler {
 
 	r := mux.NewRouter()
 
+	r.Handle("/customers", http.HandlerFunc(h.createCustomer)).Methods("POST")
+
 	r.Handle("/products", http.HandlerFunc(h.getProducts))
 
 	c := cors.New(cors.Options{

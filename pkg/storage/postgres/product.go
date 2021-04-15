@@ -8,7 +8,7 @@ import (
 	"fmt"
 )
 
-func New(db *sql.DB) *productStorage {
+func NewProductStorage(db *sql.DB) *productStorage {
 	return &productStorage{db: db}
 }
 
@@ -117,4 +117,8 @@ func (s *productStorage) CreateProduct(p *ecommerce.Product) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (s *productStorage) Tx() (*sql.Tx, error) {
+	return s.db.Begin()
 }

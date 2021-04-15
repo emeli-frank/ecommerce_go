@@ -41,7 +41,7 @@ func main() {
 	}
 	defer db.Close()
 
-	productRepo := postgres.New(db)
+	productRepo := postgres.NewProductStorage(db)
 	productService := product.New(db, productRepo)
 
 	mocker := &mock.Mock{

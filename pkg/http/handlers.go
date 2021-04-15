@@ -95,6 +95,7 @@ func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 type Http struct {
 	Response       *response
 	ProductService ecommerce.ProductService
+	UserService ecommerce.UserService
 }
 
 func NewServer(response *response) *Http {
@@ -107,6 +108,32 @@ func NewServer(response *response) *Http {
 // #### AUTHENTICATION ####
 func (h Http) authenticate(w http.ResponseWriter, r *http.Request) {
 
+}
+
+func (h Http) createCustomer(w http.ResponseWriter, r *http.Request) {
+	data := &struct {
+		Customer  ecommerce.Customer `json:"customer"`
+		Password string 		  `json:"password"`
+	}{}
+	if err := decodeJSONBody(w, r, data); err != nil {
+		var mr *malformedRequest
+		if errors.As(err, &mr) {
+			h.Response.clientError(w, mr.status, mr.msg)
+		} else {
+			h.Response.serverError(w, err)
+		}
+		return
+	}
+
+	id, err := h.UserService.CreateCustomer(&data.Customer, data.Password)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusCreated, nil, struct{
+		ID int `json:"id"`
+	}{ID:id})
 }
 
 func (h Http) getProducts(w http.ResponseWriter, r *http.Request) {

@@ -4,9 +4,7 @@ CREATE TABLE users
     first_name VARCHAR(64) NOT NULL,
     last_name VARCHAR (64) NOT NULL,
     email VARCHAR (128) NOT NULL,
-    password CHAR(60) NOT NULL,
-    created_at timestamptz NOT NULL,
-
+    password CHAR(60) NOT NULL
     PRIMARY KEY (id),
     UNIQUE (email)
 );

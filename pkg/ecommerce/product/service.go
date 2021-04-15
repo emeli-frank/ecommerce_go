@@ -14,6 +14,7 @@ type repository interface {
 		size int) ([]ecommerce.Product, error)
 	CreateCategory(name string) (int, error)
 	CreateProduct(p *ecommerce.Product) (int, error)
+	Tx() (*sql.Tx, error)
 }
 
 func New(db *sql.DB, repo repository) *service {
