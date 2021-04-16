@@ -1,6 +1,7 @@
 package ecommerce
 
 import (
+	"context"
 	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"time"
@@ -14,6 +15,9 @@ type UserService interface {
 	EmailMatchPassword(email string, password string) (bool, int, error)
 	User(uid int) (*User, error)
 	UpdateUser(user *User) error
+	SaveCreditCard(c *CreditCard, custID int) (int, error)
+	CreditCards(uid int) ([]CreditCard, error)
+	DeleteCreditCard(id int) error
 }
 
 type UserClaims struct {
@@ -76,4 +80,50 @@ func (u *User) authTokenFromClaims(c *UserClaims) (string, error) {
 	}
 
 	return tokenString, nil
+}
+
+// context stuff
+var userKey key
+
+// NewUserContext returns a new Context that carries value u.
+func NewUserContext(ctx context.Context, u *User) context.Context {
+	return context.WithValue(ctx, userKey, u)
+}
+
+// UserFromContext returns the User value stored in ctx, if any.
+func UserFromContext(ctx context.Context) (*User, bool) {
+	u, ok := ctx.Value(userKey).(*User)
+	return u, ok
+}
+
+// UserFromAuthToken returns appropriate user type (admin, org user, or applicant)
+// with only minimal info like user id, roles and org id from auth token.
+// If more user info is needed, the DB should be queried.
+func UserFromAuthToken(authToken string) (*User, error) {
+	c := &UserClaims{}
+
+	_, err := jwt.ParseWithClaims(authToken, c, func(token *jwt.Token) (interface{}, error) {
+		return []byte("my_secrete_key"), nil
+	})
+
+	// todo:: look up, this was in the doc
+	/*if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
+		fmt.Printf("%v %v", claims.Foo, claims.StandardClaims.ExpiresAt)
+	} else {
+		fmt.Println(err)
+	}*/
+
+	if err != nil {
+		// user is not logged in
+		return nil, err
+	}
+
+	// user is logged in
+	var u2 *User
+	u2 = &User{
+		ID:    c.UserID,
+		Roles: c.Roles,
+	}
+
+	return u2, nil
 }

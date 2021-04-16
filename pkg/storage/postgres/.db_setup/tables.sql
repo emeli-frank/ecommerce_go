@@ -4,7 +4,8 @@ CREATE TABLE users
     first_name VARCHAR(64) NOT NULL,
     last_name VARCHAR (64) NOT NULL,
     email VARCHAR (128) NOT NULL,
-    password CHAR(60) NOT NULL
+    password CHAR(60) NOT NULL,
+
     PRIMARY KEY (id),
     UNIQUE (email)
 );
@@ -51,7 +52,23 @@ CREATE TABLE products
     description varchar(2048),
     quantity int,
 
+    PRIMARY KEY (id),
     FOREIGN KEY (category_id)
         REFERENCES product_categories (id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE credit_cards
+(
+    id SERIAL,
+    customer_id int NOT NULL,
+    name varchar (64) NOT NULL,
+    number varchar (20) NOT NULL,
+    cvc char(3) NOT NULL,
+    expiry_date timestamptz,
+
+    PRIMARY KEY(id),
+    FOREIGN KEY (customer_id)
+        REFERENCES users (id)
         ON DELETE CASCADE
 );

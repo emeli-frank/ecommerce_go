@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+type key int
+
 type Time struct {
 	time.Time
 }
@@ -30,4 +32,12 @@ type ProductFilter struct {
 	MinPrice float32 `json:"min_price"`
 	MaxPrice float32 `json:"max_price"`
 	Discount int `json:"discount"`
+}
+
+type CreditCard struct {
+	ID int `json:"id"`
+	Name string `json:"name"`
+	Number string `json:"number"`
+	ExpiryDate string `json:"expiry_date"`
+	CVC string`json:"cvc"`
 }

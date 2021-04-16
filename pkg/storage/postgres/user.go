@@ -180,3 +180,59 @@ func (s userStorage) User(uid int) (*ecommerce.User, error) {
 
 	return u, nil
 }
+
+func (s *userStorage) SaveCreditCard(c *ecommerce.CreditCard, custID int) (int, error) {
+	const op = "userStorage.SaveCreditCard"
+
+	query := "INSERT INTO credit_cards (customer_id, name, number, cvc, expiry_date) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+	var id int
+	err := s.db.QueryRow(query, custID, c.Name, c.Number, c.CVC, c.ExpiryDate).Scan(&id)
+	if err != nil {
+		return 0, errors2.Wrap(err, op, "executing query")
+	}
+
+	return id, nil
+}
+
+func (s userStorage) CreditCards(uid int) ([]ecommerce.CreditCard, error) {
+	const op = "userStorage.CreditCards"
+
+	query := fmt.Sprintf(`SELECT 
+				id,
+				name, 
+				number
+			FROM credit_cards
+			WHERE customer_id = %d`, uid)
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, errors2.Wrap(err, op, "querying rows")
+	}
+	defer rows.Close()
+
+	var cc []ecommerce.CreditCard
+	for rows.Next() {
+		var c ecommerce.CreditCard
+		err = rows.Scan(&c.ID, &c.Name, &c.Number)
+		if err != nil {
+			return nil, errors2.Wrap(err, op, "scanning into struct")
+		}
+		cc = append(cc, c)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, errors2.Wrap(err, op, "checking error after iterating rows.Next()")
+	}
+
+	return cc, nil
+}
+
+func (s *userStorage) DeleteCreditCard(id int) error {
+	const op = "userStorage.DeleteCreditCard"
+
+	query := fmt.Sprintf("DELETE FROM credit_cards WHERE id = %d", id)
+	_, err := s.db.Exec(query)
+
+
+	return errors2.Wrap(err, op, "executing query")
+}

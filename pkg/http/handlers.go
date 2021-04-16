@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/gorilla/mux"
 	"io"
 	"net/http"
 	"strconv"
@@ -33,6 +34,8 @@ func (mr *malformedRequest) MarshalJSON() ([]byte, error) {
 	return v, nil
 
 }
+
+var ErrUserNotFoundInRequestCtx = errors.New("user not found in request context")
 
 // note:: does not handle error parsing time properly (*time.ParseError)
 // this error is seen when trying to encode "" to a time field
@@ -203,6 +206,73 @@ func (h Http) updateCustomer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Response.respond(w, http.StatusCreated, nil, nil)
+}
+
+func (h Http) saveCreditCard(w http.ResponseWriter, r *http.Request) {
+	var c *ecommerce.CreditCard
+
+	if err := decodeJSONBody(w, r, &c); err != nil {
+		var mr *malformedRequest
+		if errors.As(err, &mr) {
+			h.Response.clientError(w, mr.status, mr.msg)
+		} else {
+			h.Response.serverError(w, err)
+		}
+		return
+	}
+
+	// get user from request context
+	u, ok := ecommerce.UserFromContext(r.Context())
+	if !ok {
+		h.Response.serverError(w, ErrUserNotFoundInRequestCtx)
+		return
+	}
+
+	id, err := h.UserService.SaveCreditCard(c, u.ID)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusCreated, nil, struct{
+		ID int `json:"id"`
+	}{ID:id})
+}
+
+func (h Http) deleteCreditCard(w http.ResponseWriter, r *http.Request) {
+	cardID, err := strconv.Atoi(mux.Vars(r)["cardID"])
+	if err != nil {
+		h.Response.clientError(w, http.StatusBadRequest, "invalid card id")
+		return
+	}
+
+	err = h.UserService.DeleteCreditCard(cardID)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusCreated, nil, nil)
+}
+
+func (h Http) getCreditCard(w http.ResponseWriter, r *http.Request) {
+
+	// get user from request context
+	u, ok := ecommerce.UserFromContext(r.Context())
+	if !ok {
+		h.Response.serverError(w, ErrUserNotFoundInRequestCtx)
+		return
+	}
+
+	cc, err := h.UserService.CreditCards(u.ID)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	if cc == nil { cc = []ecommerce.CreditCard{} }
+
+	h.Response.respond(w, http.StatusCreated, nil, cc)
 }
 
 func (h Http) getProducts(w http.ResponseWriter, r *http.Request) {

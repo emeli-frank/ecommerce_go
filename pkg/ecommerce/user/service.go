@@ -13,6 +13,9 @@ type repository interface {
 	UserIDAndPasswordByEmail(email string) (int, string, error)
 	User(uid int) (*ecommerce.User, error)
 	UpdateUser(user *ecommerce.User) error
+	SaveCreditCard(c *ecommerce.CreditCard, custID int) (int, error)
+	CreditCards(uid int) ([]ecommerce.CreditCard, error)
+	DeleteCreditCard(id int) error
 	Tx() (*sql.Tx, error)
 }
 
@@ -85,15 +88,34 @@ func (s *service) User(uid int) (*ecommerce.User, error) {
 	const op = "userService.User"
 
 	u, err := s.r.User(uid)
-	if err != nil {
-		return nil, errors2.Wrap(err, op, "getting user from repo")
-	}
 
-	return u, nil
+	return u, errors2.Wrap(err, op, "getting user from repo")
 }
 
 func (s *service) UpdateUser(user *ecommerce.User) error {
 	const op = "userService.UpdateUser"
 
 	return errors2.Wrap(s.r.UpdateUser(user), op, "updating from repo")
+}
+
+func (s *service) SaveCreditCard(c *ecommerce.CreditCard, custID int) (int, error) {
+	const op = "userService.SaveCreditCard"
+
+	// todo:: encrypt card name and number
+
+	id, err := s.r.SaveCreditCard(c, custID)
+	return id, errors2.Wrap(err, op, "getting credit card")
+}
+
+func (s *service) CreditCards(uid int) ([]ecommerce.CreditCard, error) {
+	const op = "userService.CreditCards"
+
+	cc, err := s.r.CreditCards(uid)
+	return cc, errors2.Wrap(err, op, "getting credit cards from repo")
+}
+
+func (s *service) DeleteCreditCard(id int) error {
+	const op = "userService.DeleteCreditCard"
+
+	return errors2.Wrap(s.r.DeleteCreditCard(id), op, "deleting card via repo")
 }

@@ -8,12 +8,18 @@ import (
 )
 
 func (h Http) Routes() http.Handler {
-	standardMiddleWare := alice.New(h.recoverPanic /*, s.setReqCtxUser*/)
+	standardMiddleWare := alice.New(h.recoverPanic , h.setReqCtxUser)
 	//authOnlyMiddleWare := alice.New(/*s.checkJWT, */s.authenticatedOnly)
 
 	r := mux.NewRouter()
 
 	r.Handle("/customers", http.HandlerFunc(h.createCustomer)).Methods("POST")
+
+	r.Handle("/customers/cards", http.HandlerFunc(h.saveCreditCard)).Methods("POST")
+
+	r.Handle("/customers/cards/{cardID:[1-9]+}", http.HandlerFunc(h.deleteCreditCard)).Methods("DELETE")
+
+	r.Handle("/customers/cards", http.HandlerFunc(h.getCreditCard))
 
 	r.Handle("/users/{uid:[1-9]+}", http.HandlerFunc(h.updateCustomer)).Methods("PUT")
 
