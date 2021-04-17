@@ -21,6 +21,9 @@ type UserService interface {
 	UpdateCustomerAddress(custID int, a *Address) error
 	CustomerAddress(custID int) (*Address, error)
 	DeleteCustomerAddress(custID int) error
+	OrdersByCustID(custID int) ([]Order, error)
+	CartItems(custID int) ([]CartItem, error)
+	AddCartItems(custID, productID int) error
 }
 
 type UserClaims struct {

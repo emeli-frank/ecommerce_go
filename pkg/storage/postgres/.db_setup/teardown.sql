@@ -1,6 +1,10 @@
+DROP TABLE IF EXISTS cart_items;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS credit_cards;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS product_categories;
 DROP TABLE IF EXISTS role_user_map;
 DROP TABLE IF EXISTS roles;
 DROP SEQUENCE IF EXISTS role_id_seq;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS addresses;

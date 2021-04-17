@@ -1,5 +1,7 @@
 package ecommerce
 
+import "database/sql"
+
 type ProductService interface {
 	Products(
 		categoryID int,
@@ -9,6 +11,9 @@ type ProductService interface {
 		size int) ([]Product, error)
 	CreateCategory(name string) (int, error)
 	CreateProduct(p *Product) (int, error)
+	UpdateProductWithTx(tx *sql.Tx, p *Product) error
+	Product(id int) (*Product, error)
+	ProductsFromIDs(ids []int) ([]Product, error)
 }
 
 type Product struct {

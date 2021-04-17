@@ -50,3 +50,17 @@ type Address struct {
 	PostalCode string `json:"postal_code"`
 	Address string `json:"address"`
 }
+
+type Order struct {
+	ID int `json:"id"`
+	Product Product `json:"product"`
+	ShippingAddressID int `json:"shipping_address_id"`
+	OrderedAt time.Time `json:"ordered_at"`
+	Quantity int `json:"quantity"`
+	CustomerID int `json:"customer_id"`
+}
+
+type CartItem struct {
+	Product Product `json:"product"`
+	Quantity int `json:"quantity"`
+}

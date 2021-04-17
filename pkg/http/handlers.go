@@ -344,6 +344,26 @@ func (h Http) getCreditCard(w http.ResponseWriter, r *http.Request) {
 	h.Response.respond(w, http.StatusOK, nil, cc)
 }
 
+func (h Http) getCustomerOrders(w http.ResponseWriter, r *http.Request) {
+
+	// get user from request context
+	u, ok := ecommerce.UserFromContext(r.Context())
+	if !ok {
+		h.Response.serverError(w, ErrUserNotFoundInRequestCtx)
+		return
+	}
+
+	oo, err := h.UserService.OrdersByCustID(u.ID)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	if oo == nil { oo = []ecommerce.Order{} }
+
+	h.Response.respond(w, http.StatusOK, nil, oo)
+}
+
 func (h Http) getProducts(w http.ResponseWriter, r *http.Request) {
 	const op = "http.getProducts"
 
@@ -414,4 +434,73 @@ func (h Http) getProducts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.Response.respond(w, http.StatusOK, nil, pp)
+}
+
+func (h Http) getProduct(w http.ResponseWriter, r *http.Request) {
+	const op = "http.getProduct"
+
+	pdtID, err := strconv.Atoi(mux.Vars(r)["productID"])
+	if err != nil {
+		h.Response.clientError(w, http.StatusBadRequest, "invalid product id")
+		return
+	}
+
+	p, err := h.ProductService.Product(pdtID)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusOK, nil, p)
+}
+
+func (h Http) getCartItems(w http.ResponseWriter, r *http.Request) {
+
+	// get user from request context
+	u, ok := ecommerce.UserFromContext(r.Context())
+	if !ok {
+		h.Response.serverError(w, ErrUserNotFoundInRequestCtx)
+		return
+	}
+
+	cc, err := h.UserService.CartItems(u.ID)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	if cc == nil { cc = []ecommerce.CartItem{} }
+
+	h.Response.respond(w, http.StatusOK, nil, cc)
+}
+
+func (h Http) addCartItems(w http.ResponseWriter, r *http.Request) {
+
+	var data struct {
+		ProductID int `json:"product_id"`
+	}
+	if err := decodeJSONBody(w, r, &data); err != nil {
+		var mr *malformedRequest
+		if errors.As(err, &mr) {
+			h.Response.clientError(w, mr.status, mr.msg)
+		} else {
+			h.Response.serverError(w, err)
+		}
+		return
+	}
+
+	// get user from request context
+	u, ok := ecommerce.UserFromContext(r.Context())
+	if !ok {
+		h.Response.serverError(w, ErrUserNotFoundInRequestCtx)
+		return
+	}
+
+	err := h.UserService.AddCartItems(u.ID, data.ProductID)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusOK, nil, nil)
 }

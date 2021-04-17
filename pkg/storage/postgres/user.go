@@ -242,3 +242,63 @@ func (s *userStorage) DeleteCreditCard(id int) error {
 
 	return errors2.Wrap(err, op, "executing query")
 }
+
+func (s *userStorage) CustOrderIDs(id int) ([]int, error) {
+	const op = "userStorage.CustOrderIDs"
+
+	query := fmt.Sprintf("SELECT id FROM orders WHERE customer_id = %d", id)
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, errors2.Wrap(err, op, "executing query")
+	}
+	defer rows.Close()
+
+	var ids []int
+	for rows.Next() {
+		var id int
+		err := rows.Scan(&id)
+		if err == sql.ErrNoRows {
+			return nil, errors2.Wrap(err, op, "scanning")
+		}
+
+		ids = append(ids, id)
+	}
+
+	return ids, errors2.Wrap(err, op, "executing query")
+}
+
+func (s *userStorage) CartItems(custID int) ([]ecommerce.CartItem, error) {
+	const op = "userStorage.CartItems"
+
+	query := fmt.Sprintf("SELECT product_id, quantity FROM cart_items WHERE customer_id = %d", custID)
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, errors2.Wrap(err, op, "executing query")
+	}
+	defer rows.Close()
+
+	var cc []ecommerce.CartItem
+	for rows.Next() {
+		var c ecommerce.CartItem
+		err = rows.Scan(&c.Product.ID, &c.Quantity)
+		if err != nil {
+			return nil, errors2.Wrap(err, op, "scanning")
+		}
+		cc = append(cc, c)
+	}
+
+	return cc, errors2.Wrap(rows.Err(), op, "error after scan")
+}
+
+func (s *userStorage) AddCartItems(custID, productID int) error {
+	const op = "userStorage.AddCartItems"
+
+	query := fmt.Sprintf(`INSERT INTO cart_items (product_id, customer_id, quantity) 
+			VALUES (%d, %d, 1) 
+			ON CONFLICT (product_id, customer_id) 
+				DO UPDATE SET quantity = cart_items.quantity + 1`, productID, custID)
+	fmt.Println(query)
+
+	_, err := s.db.Exec(query)
+	return errors2.Wrap(err, op, "executing query")
+}

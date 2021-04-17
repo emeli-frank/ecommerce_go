@@ -35,7 +35,8 @@ func main() {
 
 	userRepo := postgres.NewUserStorage(db)
 	addressRepo := postgres.NewAddressStorage(db)
-	userService := user.New(db, userRepo, addressRepo)
+	orderRepo := postgres.NewOrderStorage(db)
+	userService := user.New(db, userRepo, addressRepo, orderRepo, productService)
 
 	httpEndpoint := &http2.Http{
 		Response: response,

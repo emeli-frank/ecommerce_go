@@ -1,3 +1,15 @@
+CREATE TABLE addresses
+(
+    id SERIAL,
+    country VARCHAR(32) NOT NULL,
+    state VARCHAR (32) NOT NULL,
+    city VARCHAR (32) NOT NULL,
+    postal_code VARCHAR (8) NOT NULL,
+    address VARCHAR (64) NOT NULL,
+
+    PRIMARY KEY (id)
+);
+
 CREATE TABLE users
 (
     id SERIAL,
@@ -12,18 +24,6 @@ CREATE TABLE users
     FOREIGN KEY (address_id)
         REFERENCES addresses (id)
         ON DELETE CASCADE
-);
-
-CREATE TABLE addresses
-(
-    id SERIAL,
-    country VARCHAR(32) NOT NULL,
-    state VARCHAR (32) NOT NULL,
-    city VARCHAR (32) NOT NULL,
-    postal_code VARCHAR (8) NOT NULL,
-    address VARCHAR (64) NOT NULL,
-
-    PRIMARY KEY (id)
 );
 
 CREATE SEQUENCE role_id_seq;
@@ -84,6 +84,43 @@ CREATE TABLE credit_cards
     expiry_date timestamptz,
 
     PRIMARY KEY(id),
+    FOREIGN KEY (customer_id)
+        REFERENCES users (id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE orders
+(
+    id SERIAL,
+    product_id int NOT NULL,
+    ordered_at timestamp NOT NULL,
+    shipping_address_id int NOT NULL,
+    quantity smallint NOT NULL,
+    customer_id int NOT NULL,
+    purchased_at float NOT NULL,
+
+    PRIMARY KEY (id),
+    FOREIGN KEY (product_id)
+        REFERENCES PRODUCTS (id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (shipping_address_id)
+        REFERENCES addresses (id)
+        ON DELETE CASCADE,
+    FOREIGN KEY (customer_id)
+        REFERENCES users (id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE cart_items
+(
+    product_id int NOT NULL,
+    customer_id int NOT NULL,
+    quantity smallint NOT NULL,
+
+    UNIQUE (product_id, customer_id),
+    FOREIGN KEY (product_id)
+        REFERENCES PRODUCTS (id)
+        ON DELETE CASCADE,
     FOREIGN KEY (customer_id)
         REFERENCES users (id)
         ON DELETE CASCADE

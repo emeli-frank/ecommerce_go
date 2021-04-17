@@ -17,6 +17,10 @@ type repository interface {
 	SaveCreditCard(c *ecommerce.CreditCard, custID int) (int, error)
 	CreditCards(uid int) ([]ecommerce.CreditCard, error)
 	DeleteCreditCard(id int) error
+	//Product(id int) (*ecommerce.Product, error)
+	CustOrderIDs(id int) ([]int, error)
+	CartItems(custID int) ([]ecommerce.CartItem, error)
+	AddCartItems(custID, productID int) error
 	Tx() (*sql.Tx, error)
 }
 
@@ -27,14 +31,21 @@ type addressRepo interface {
 	DeleteAddress(tx *sql.Tx, id int) error
 }
 
-func New(db *sql.DB, repo repository, addressRepo addressRepo) *service {
-	return &service{db: db, r: repo, addressRepo: addressRepo}
+type orderRepo interface {
+	SaveOrder(tx *sql.Tx, o *ecommerce.Order) (int, error)
+	Orders(ids []int) ([]ecommerce.Order, error)
+}
+
+func New(db *sql.DB, repo repository, addressRepo addressRepo, orderRepo orderRepo, productService ecommerce.ProductService) *service {
+	return &service{db: db, r: repo, addressRepo: addressRepo, orderRepo: orderRepo, productService: productService}
 }
 
 type service struct {
 	db *sql.DB
 	r repository
 	addressRepo addressRepo
+	orderRepo orderRepo
+	productService ecommerce.ProductService
 }
 
 func (s *service) CreateCustomer(c *ecommerce.User, password string) (int, error) {
@@ -224,4 +235,86 @@ func (s *service) DeleteCustomerAddress(custID int) error {
 	}
 
 	return errors2.Wrap(tx.Commit(), op, "committing tx")
+}
+
+func (s *service) CreateOrder(o *ecommerce.Order) (int, error) {
+	const op = "userService.CreateOrder"
+
+	p, err := s.productService.Product(o.Product.ID)
+	if err != nil {
+		return 0, errors2.Wrap(err, op, "getting product")
+	}
+
+	tx, err := s.r.Tx()
+	if err != nil {
+		return 0, errors2.Wrap(err, op, "obtaining tx")
+	}
+
+	p.Quantity = p.Quantity - o.Quantity
+
+	// update product quantity
+	err = s.productService.UpdateProductWithTx(tx, p)
+	if err != nil {
+		tx.Rollback()
+		return 0, errors2.Wrap(err, op, "updating product quantity")
+	}
+
+	// save order
+	orderID, err := s.orderRepo.SaveOrder(tx, o)
+	if err != nil {
+		tx.Rollback()
+		return 0, errors2.Wrap(err, op, "saving order")
+	}
+
+	return orderID, errors2.Wrap(tx.Commit(), op, "committing tx")
+}
+
+func (s *service) OrdersByCustID(custID int) ([]ecommerce.Order, error) {
+	const op = "userService.OrdersByCustID"
+
+	orderIDs, err := s.r.CustOrderIDs(custID)
+	if err != nil {
+		return nil, errors2.Wrap(err, op, "getting cust order dis")
+	}
+
+	oo, err := s.orderRepo.Orders(orderIDs)
+	return oo, errors2.Wrap(err, op, "getting orders")
+}
+
+func (s *service) CartItems(custID int) ([]ecommerce.CartItem, error) {
+	const op = "userService.CartItems"
+
+	// get cart items
+	cc, err := s.r.CartItems(custID)
+	if err != nil {
+		return nil, errors2.Wrap(err, op, "getting cart items from repo")
+	}
+
+	var pdtIDs []int
+	for _, c := range cc {
+		pdtIDs = append(pdtIDs, c.Product.ID)
+	}
+
+	// get products with ids
+	pp, err := s.productService.ProductsFromIDs(pdtIDs)
+	if err != nil {
+		return nil, errors2.Wrap(err, op, "getting products from ids")
+	}
+
+	// attach products to cart items
+	for i := 0; i < len(cc); i++ {
+		for _, p := range pp {
+			if p.ID == cc[i].Product.ID {
+				cc[i].Product = p
+			}
+		}
+	}
+
+	return cc, nil
+}
+
+func (s *service) AddCartItems(custID, productID int) error {
+	const op = "userService.AddCartItems"
+
+	return errors2.Wrap(s.r.AddCartItems(custID, productID), op, "adding cart item via repo")
 }

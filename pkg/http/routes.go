@@ -25,6 +25,12 @@ func (h Http) Routes() http.Handler {
 
 	r.Handle("/customers/{uid:[1-9]+}/address", http.HandlerFunc(h.getCustomerAddress))
 
+	r.Handle("/customers/{uid:[1-9]+}/cart", http.HandlerFunc(h.addCartItems)).Methods("POST")
+
+	r.Handle("/customers/{uid:[1-9]+}/cart", http.HandlerFunc(h.getCartItems))
+
+	r.Handle("/customers/{uid:[1-9]+}/orders", http.HandlerFunc(h.getCustomerOrders))
+
 	r.Handle("/customers/cards", http.HandlerFunc(h.getCreditCard))
 
 	r.Handle("/users/{uid:[1-9]+}", http.HandlerFunc(h.updateCustomer)).Methods("PUT")
@@ -32,6 +38,8 @@ func (h Http) Routes() http.Handler {
 	r.Handle("/users/authentication", http.HandlerFunc(h.authenticate)).Methods("POST")
 
 	r.Handle("/products", http.HandlerFunc(h.getProducts))
+
+	r.Handle("/products/{productID:[1-9]+}", http.HandlerFunc(h.getProduct))
 
 	c := cors.New(cors.Options{
 		AllowedOrigins: []string{"http://localhost:4200", "*"}, // todo:: adjust before production
