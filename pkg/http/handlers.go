@@ -2,6 +2,7 @@ package http
 
 import (
 	"ecommerce/pkg/ecommerce"
+	errors2 "ecommerce/pkg/ecommerce/errors"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -205,7 +206,75 @@ func (h Http) updateCustomer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Response.respond(w, http.StatusCreated, nil, nil)
+	h.Response.respond(w, http.StatusOK, nil, nil)
+}
+
+func (h Http) getCustomerAddress(w http.ResponseWriter, r *http.Request) {
+	// get user from request context
+	u, ok := ecommerce.UserFromContext(r.Context())
+	if !ok {
+		h.Response.serverError(w, ErrUserNotFoundInRequestCtx)
+		return
+	}
+
+	a, err := h.UserService.CustomerAddress(u.ID)
+	if err != nil {
+		_, ok := errors2.Unwrap(err).(*errors2.NotFound)
+		if ok {
+			h.Response.respond(w, http.StatusOK, nil, nil)
+			return
+		}
+
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusOK, nil, a)
+}
+
+func (h Http) updateCustomerAddress(w http.ResponseWriter, r *http.Request) {
+	var a ecommerce.Address
+	if err := decodeJSONBody(w, r, &a); err != nil {
+		var mr *malformedRequest
+		if errors.As(err, &mr) {
+			h.Response.clientError(w, mr.status, mr.msg)
+		} else {
+			h.Response.serverError(w, err)
+		}
+		return
+	}
+
+	// get user from request context
+	u, ok := ecommerce.UserFromContext(r.Context())
+	if !ok {
+		h.Response.serverError(w, ErrUserNotFoundInRequestCtx)
+		return
+	}
+
+	err := h.UserService.UpdateCustomerAddress(u.ID, &a)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusOK, nil, nil)
+}
+
+func (h Http) deleteCustomerAddress(w http.ResponseWriter, r *http.Request) {
+	// get user from request context
+	u, ok := ecommerce.UserFromContext(r.Context())
+	if !ok {
+		h.Response.serverError(w, ErrUserNotFoundInRequestCtx)
+		return
+	}
+
+	err := h.UserService.DeleteCustomerAddress(u.ID)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusOK, nil, nil)
 }
 
 func (h Http) saveCreditCard(w http.ResponseWriter, r *http.Request) {
@@ -252,7 +321,7 @@ func (h Http) deleteCreditCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Response.respond(w, http.StatusCreated, nil, nil)
+	h.Response.respond(w, http.StatusOK, nil, nil)
 }
 
 func (h Http) getCreditCard(w http.ResponseWriter, r *http.Request) {
@@ -272,7 +341,7 @@ func (h Http) getCreditCard(w http.ResponseWriter, r *http.Request) {
 
 	if cc == nil { cc = []ecommerce.CreditCard{} }
 
-	h.Response.respond(w, http.StatusCreated, nil, cc)
+	h.Response.respond(w, http.StatusOK, nil, cc)
 }
 
 func (h Http) getProducts(w http.ResponseWriter, r *http.Request) {

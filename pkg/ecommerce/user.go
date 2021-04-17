@@ -18,6 +18,9 @@ type UserService interface {
 	SaveCreditCard(c *CreditCard, custID int) (int, error)
 	CreditCards(uid int) ([]CreditCard, error)
 	DeleteCreditCard(id int) error
+	UpdateCustomerAddress(custID int, a *Address) error
+	CustomerAddress(custID int) (*Address, error)
+	DeleteCustomerAddress(custID int) error
 }
 
 type UserClaims struct {
@@ -32,6 +35,7 @@ type User struct {
 	LastName string `json:"last_name"`
 	Email string `json:"email"`
 	Roles []int `json:"roles"`
+	AddressID int `json:"address_id"`
 }
 
 func (u *User) AuthToken() (string, error) {

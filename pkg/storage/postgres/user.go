@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"ecommerce/pkg/ecommerce"
 	errors2 "ecommerce/pkg/ecommerce/errors"
+	"ecommerce/pkg/storage"
 	"errors"
 	"fmt"
 )
@@ -33,15 +34,17 @@ func (s *userStorage) SaveUserWithTx(tx *sql.Tx, user *ecommerce.User, hashedPas
 	return id, nil
 }
 
-func (s *userStorage) UpdateUser(user *ecommerce.User) error {
-	const op = "userStorage.UpdateUser"
+func (s *userStorage) UpdateUserWithTx(tx *sql.Tx, user *ecommerce.User) error {
+	const op = "userStorage.UpdateUserWithTx"
 
 	query := "UPDATE users SET " +
 		"first_name = $1," +
 		"last_name = $2," +
-		"email = $3" +
-		"WHERE id = $4"
-	_, err := s.db.Exec(query, user.FirstName, user.LastName, user.Email, user.ID)
+		"email = $3," +
+		"address_id = $4" +
+		"WHERE id = $5"
+	_, err := tx.Exec(query, user.FirstName, user.LastName, user.Email,
+		storage.IntToNullableInt(int64(user.AddressID)), user.ID)
 	if err != nil {
 		return errors2.Wrap(err, op, "executing query")
 	}
@@ -139,6 +142,7 @@ func (s userStorage) User(uid int) (*ecommerce.User, error) {
 				users.first_name, 
 				users.last_name, 
 				users.email,
+				users.address_id,
 				role_user_map.role_id
 			FROM users
 			INNER JOIN role_user_map ON users.id = role_user_map.user_id
@@ -155,11 +159,13 @@ func (s userStorage) User(uid int) (*ecommerce.User, error) {
 
 	if rows.Next() {
 		tempUser := ecommerce.User{}
-		err = rows.Scan(&tempUser.ID, &tempUser.FirstName, &tempUser.LastName, &tempUser.Email, &r)
+		var nullableAddressID sql.NullInt64
+		err = rows.Scan(&tempUser.ID, &tempUser.FirstName, &tempUser.LastName, &tempUser.Email, &nullableAddressID, &r)
 		if err != nil {
 			return nil, errors2.Wrap(err, op, "scanning into struct")
 		}
 		tempUser.Roles = append(tempUser.Roles, r)
+		tempUser.AddressID = int(storage.NullableIntToInt(nullableAddressID))
 		u = &tempUser
 	} else {
 		return nil, errors2.Wrap(&errors2.NotFound{Err:errors.New("user not found")}, op, "")

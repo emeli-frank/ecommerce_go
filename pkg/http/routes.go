@@ -19,6 +19,12 @@ func (h Http) Routes() http.Handler {
 
 	r.Handle("/customers/cards/{cardID:[1-9]+}", http.HandlerFunc(h.deleteCreditCard)).Methods("DELETE")
 
+	r.Handle("/customers/{uid:[1-9]+}/address", http.HandlerFunc(h.updateCustomerAddress)).Methods("PUT")
+
+	r.Handle("/customers/{uid:[1-9]+}/address", http.HandlerFunc(h.deleteCustomerAddress)).Methods("DELETE")
+
+	r.Handle("/customers/{uid:[1-9]+}/address", http.HandlerFunc(h.getCustomerAddress))
+
 	r.Handle("/customers/cards", http.HandlerFunc(h.getCreditCard))
 
 	r.Handle("/users/{uid:[1-9]+}", http.HandlerFunc(h.updateCustomer)).Methods("PUT")

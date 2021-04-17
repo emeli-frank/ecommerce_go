@@ -5,9 +5,25 @@ CREATE TABLE users
     last_name VARCHAR (64) NOT NULL,
     email VARCHAR (128) NOT NULL,
     password CHAR(60) NOT NULL,
+    address_id int,
 
     PRIMARY KEY (id),
-    UNIQUE (email)
+    UNIQUE (email),
+    FOREIGN KEY (address_id)
+        REFERENCES addresses (id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE addresses
+(
+    id SERIAL,
+    country VARCHAR(32) NOT NULL,
+    state VARCHAR (32) NOT NULL,
+    city VARCHAR (32) NOT NULL,
+    postal_code VARCHAR (8) NOT NULL,
+    address VARCHAR (64) NOT NULL,
+
+    PRIMARY KEY (id)
 );
 
 CREATE SEQUENCE role_id_seq;

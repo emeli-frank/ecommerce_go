@@ -41,3 +41,12 @@ type CreditCard struct {
 	ExpiryDate string `json:"expiry_date"`
 	CVC string`json:"cvc"`
 }
+
+type Address struct {
+	ID int `json:"id"`
+	Country string `json:"country"`
+	State string `json:"state"`
+	City string `json:"city"`
+	PostalCode string `json:"postal_code"`
+	Address string `json:"address"`
+}
