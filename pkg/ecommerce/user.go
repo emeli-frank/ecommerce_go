@@ -24,6 +24,7 @@ type UserService interface {
 	OrdersByCustID(custID int) ([]Order, error)
 	CartItems(custID int) ([]CartItem, error)
 	AddCartItems(custID, productID int) error
+	CartItemCount(custID int) (int, error)
 }
 
 type UserClaims struct {

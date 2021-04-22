@@ -302,3 +302,17 @@ func (s *userStorage) AddCartItems(custID, productID int) error {
 	_, err := s.db.Exec(query)
 	return errors2.Wrap(err, op, "executing query")
 }
+
+func (s *userStorage) CartItemCount(custID int) (int, error) {
+	const op = "userStorage.CartItemCount"
+
+	query := fmt.Sprintf("SELECT SUM(quantity) FROM cart_items WHERE customer_id = %d", custID)
+
+	var countNullable sql.NullInt64
+	err := s.db.QueryRow(query).Scan(&countNullable)
+	if err != nil {
+		return 0, errors2.Wrap(err, op, "executing query")
+	}
+
+	return int(storage.NullableIntToInt(countNullable)), nil
+}

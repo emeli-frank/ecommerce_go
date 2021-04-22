@@ -502,5 +502,32 @@ func (h Http) addCartItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Response.respond(w, http.StatusOK, nil, nil)
+	count, err := h.UserService.CartItemCount(u.ID)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusOK, nil, struct {
+		Count int `json:"count"`
+	}{Count: count})
+}
+
+func (h Http) cartItemCount(w http.ResponseWriter, r *http.Request) {
+	// get user from request context
+	u, ok := ecommerce.UserFromContext(r.Context())
+	if !ok {
+		h.Response.serverError(w, ErrUserNotFoundInRequestCtx)
+		return
+	}
+
+	count, err := h.UserService.CartItemCount(u.ID)
+	if err != nil {
+		h.Response.serverError(w, err)
+		return
+	}
+
+	h.Response.respond(w, http.StatusOK, nil, struct {
+		Count int `json:"count"`
+	}{Count: count})
 }

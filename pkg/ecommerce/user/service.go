@@ -21,6 +21,7 @@ type repository interface {
 	CustOrderIDs(id int) ([]int, error)
 	CartItems(custID int) ([]ecommerce.CartItem, error)
 	AddCartItems(custID, productID int) error
+	CartItemCount(custID int) (int, error)
 	Tx() (*sql.Tx, error)
 }
 
@@ -317,4 +318,11 @@ func (s *service) AddCartItems(custID, productID int) error {
 	const op = "userService.AddCartItems"
 
 	return errors2.Wrap(s.r.AddCartItems(custID, productID), op, "adding cart item via repo")
+}
+
+func (s *service) CartItemCount(custID int) (int, error) {
+	const op = "userService.CartItemCount"
+
+	count, err := s.r.CartItemCount(custID)
+	return count, errors2.Wrap(err, op, "getting cart item count from repo")
 }
